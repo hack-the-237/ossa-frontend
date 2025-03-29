@@ -1,5 +1,8 @@
 # Welcome to OSSA
 
+![alt text](https://github.com/hack-the-237/ossa-frontend/blob/main/public/OSSA.png?raw=true)
+
+
 ## Project info
 OSSA is a private, secure and cloud-base solution that helps organisations craft winning proposals faster and more effectively than ever before.
 
