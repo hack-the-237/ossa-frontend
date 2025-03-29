@@ -1,0 +1,145 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 45 100% 50%; /* MTN Yellow */
+    --primary-foreground: 228 100% 1%; /* Black for visibility on yellow */
+
+    --secondary: 228 100% 1%; /* MTN Dark (almost black) */
+    --secondary-foreground: 210 40% 98%; /* Light text for dark background */
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 45 100% 96%; /* Light yellow accent */
+    --accent-foreground: 228 100% 1%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 45 100% 50%; /* MTN Yellow for focus rings */
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 228 100% 1%; /* Dark sidebar */
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 45 100% 50%; /* MTN Yellow */
+    --sidebar-primary-foreground: 228 100% 1%;
+    --sidebar-accent: 228 10% 10%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 228 20% 10%;
+    --sidebar-ring: 45 100% 50%;
+  }
+
+  .dark {
+    --background: 228 100% 1%;
+    --foreground: 210 40% 98%;
+
+    --card: 228 100% 2%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 228 100% 2%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 45 100% 50%; /* MTN Yellow */
+    --primary-foreground: 228 100% 1%;
+
+    --secondary: 228 10% 10%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 228 10% 10%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 228 10% 15%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 228 10% 10%;
+    --input: 228 10% 10%;
+    --ring: 45 100% 50%;
+    
+    --sidebar-background: 228 100% 2%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 45 100% 50%; /* MTN Yellow */
+    --sidebar-primary-foreground: 228 100% 1%;
+    --sidebar-accent: 228 10% 10%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 228 10% 10%;
+    --sidebar-ring: 45 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .page-container {
+    @apply container mx-auto px-4 pt-16 pb-24 min-h-screen;
+  }
+  
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-sm border border-gray-100 shadow-sm;
+  }
+  
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .mtn-gradient {
+    @apply bg-gradient-to-br from-brand-400 to-brand-600;
+  }
+
+  .mtn-button {
+    @apply bg-brand-500 hover:bg-brand-600 text-navy-950 font-medium;
+  }
+}
+
+/* Custom animations */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transition: opacity 200ms;
+}
