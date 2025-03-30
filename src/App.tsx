@@ -57,7 +57,6 @@ const AppRoutes = () => {
         <Route path="/" element={
           <ProtectedRoute>
             <Layout><Index /></Layout>
-            <Navigate to="/create-proposal" replace />
           </ProtectedRoute>
         } />
         <Route path="/knowledge-base" element={
