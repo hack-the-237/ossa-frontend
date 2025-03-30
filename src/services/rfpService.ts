@@ -1,4 +1,3 @@
-
 import { toast } from "@/hooks/use-toast";
 import { formatDocumentLocation } from './rfp/documentUtils';
 import { requestRfpProcessing } from './rfp/apiService';
@@ -7,17 +6,19 @@ import { formatRfpSummary } from './rfp/formatterService';
 /**
  * Process an RFP document and get the summary
  * @param file The file to process
+ * @param gcsPath Optional GCS path if the file has already been uploaded
  * @returns The processed RFP document summary
  */
-export const processRfpDocument = async (file: File): Promise<any> => {
+export const processRfpDocument = async (file: File, gcsPath?: string): Promise<any> => {
   try {
-    // Format the document location based on the filename
-    const documentLocation = formatDocumentLocation(file.name);
+    // Use the provided GCS path if available, otherwise format the location from filename
+    const documentLocation = gcsPath || formatDocumentLocation(file.name);
     
     console.log("Processing RFP document:", {
       documentLocation,
       fileName: file.name,
-      fileSize: file.size
+      fileSize: file.size,
+      usingGcsPath: !!gcsPath
     });
 
     // Request RFP processing from the API

@@ -3,6 +3,7 @@ import { toast } from "@/hooks/use-toast";
 import { RfpSummaryFormData } from "@/components/proposal/ProposalTypes";
 import { processRfpDocument } from "@/services/rfpService";
 import { formatDocumentLocation } from "@/services/rfp/documentUtils";
+import apiClient from "@/api/apiClient";
 
 /**
  * Hook to handle RFP document processing
@@ -28,20 +29,46 @@ export const useProcessDocument = () => {
     console.log("Starting RFP document processing for file:", file.name);
     
     try {
-      // Format document location from the file name
-      const documentLocation = formatDocumentLocation(file.name);
-      console.log("Formatted document location:", documentLocation);
+      // First upload the RFP file to get the GCS path
+      console.log("Uploading RFP file to get GCS path...");
       
-      // First, update the form data with just the document location to ensure it's set
+      toast({
+        title: "Uploading RFP",
+        description: "Uploading your RFP document to our server...",
+      });
+      
+      // Upload the file to the RFP upload endpoint
+      const uploadResponse = await apiClient.uploadRfpDocument<{
+        status: string;
+        gcs_path: string;
+        size: string;
+      }>(file);
+      
+      if (uploadResponse.status !== "success" || !uploadResponse.gcs_path) {
+        throw new Error("Failed to upload RFP document: Invalid response");
+      }
+      
+      console.log("RFP file uploaded successfully:", uploadResponse);
+      
+      // Extract the GCS path from the upload response
+      const documentLocation = uploadResponse.gcs_path;
+      console.log("Using GCS path as document location:", documentLocation);
+      
+      // Update the form data with the document location
       updateFormData({ documentLocation });
       
+      toast({
+        title: "RFP Uploaded",
+        description: `Successfully uploaded ${file.name} (${uploadResponse.size})`,
+      });
+      
       try {
-        // The processRfpDocument function now returns formatted data directly
-        const formattedData = await processRfpDocument(file);
+        // Process the RFP document using the GCS path
+        const formattedData = await processRfpDocument(file, documentLocation);
         
         console.log("Setting form data with formatted RFP data:", formattedData);
         
-        // Update the form data with the processed RFP summary and document location
+        // Update the form data with the processed RFP summary
         updateFormData({
           ...formattedData,
           documentLocation // Include the document location in the form data

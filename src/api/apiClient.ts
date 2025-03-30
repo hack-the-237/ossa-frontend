@@ -215,6 +215,47 @@ export const apiClient = {
       }
       throw error;
     }
+  },
+  
+  // NEW: Upload RFP document to the dedicated RFP endpoint
+  uploadRfpDocument: async <T>(file: File): Promise<T> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${KNOWLEDGE_BASE_API_URL}/rfp-upload`, {
+        method: "POST",
+        mode: "cors",
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        console.error("Error uploading RFP document:", errorText);
+        
+        toast({
+          title: "RFP Upload Failed",
+          description: `Failed to upload RFP document: ${response.status} ${response.statusText}`,
+          variant: "destructive",
+        });
+        
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      return result as T;
+    } catch (error) {
+      console.error("RFP document upload error:", error);
+      
+      if (error instanceof Error) {
+        toast({
+          title: "RFP Upload Failed",
+          description: `Failed to upload RFP document: ${error.message}`,
+          variant: "destructive",
+        });
+      }
+      throw error;
+    }
   }
 };
 

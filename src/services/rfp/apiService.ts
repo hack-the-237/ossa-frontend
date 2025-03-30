@@ -4,7 +4,7 @@ import { API_ENDPOINT, USE_MOCK_DATA, MOCK_RFP_RESPONSE } from './config';
 
 /**
  * Makes an API request to process the RFP document
- * @param documentLocation The location of the document to process
+ * @param documentLocation The GCS path or location of the document to process
  * @returns The response from the API
  */
 export const requestRfpProcessing = async (documentLocation: string): Promise<any> => {
