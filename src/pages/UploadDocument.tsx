@@ -1,6 +1,5 @@
-
 import { useState, ChangeEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   Upload, 
   File, 
@@ -29,8 +28,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import apiClient from "@/api/apiClient";
+
+// Response interface for document upload
+interface UploadResponse {
+  status: string;
+  gcs_path: string;
+  size: string;
+}
 
 // Mock categories
 const categories = [
@@ -44,10 +51,12 @@ const categories = [
 ];
 
 const UploadDocument = () => {
+  const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [uploadResponse, setUploadResponse] = useState<UploadResponse | null>(null);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
@@ -63,7 +72,7 @@ const UploadDocument = () => {
     setSelectedFile(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!selectedFile) {
@@ -84,25 +93,41 @@ const UploadDocument = () => {
       return;
     }
     
-    // Simulate file upload with progress
     setIsUploading(true);
     setUploadProgress(0);
     
-    const interval = setInterval(() => {
+    // Use interval to simulate upload progress
+    const progressInterval = setInterval(() => {
       setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          setUploadSuccess(true);
-          toast({
-            title: "Upload Complete",
-            description: `${selectedFile.name} has been uploaded successfully.`,
-          });
-          return 100;
-        }
-        return prev + 10;
+        // Cap at 90% until actual completion
+        return prev < 90 ? prev + 5 : prev;
       });
     }, 300);
+    
+    try {
+      // Upload the file to knowledge base
+      const response = await apiClient.uploadKnowledgeBaseDocument<UploadResponse>(selectedFile);
+      
+      // Clear the interval and set progress to 100%
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      // Set upload success and response
+      setUploadSuccess(true);
+      setUploadResponse(response);
+      
+      toast({
+        title: "Upload Complete",
+        description: `${selectedFile.name} has been uploaded successfully.`,
+      });
+    } catch (error) {
+      clearInterval(progressInterval);
+      setIsUploading(false);
+      setUploadProgress(0);
+      
+      // Error is already handled in the API client
+      console.error("Upload failed:", error);
+    }
   };
 
   const resetForm = () => {
@@ -113,6 +138,7 @@ const UploadDocument = () => {
     setTags("");
     setUploadSuccess(false);
     setUploadProgress(0);
+    setUploadResponse(null);
   };
 
   return (
@@ -145,6 +171,14 @@ const UploadDocument = () => {
                   <p className="text-muted-foreground mb-6">
                     Your document has been uploaded successfully and is now available in the knowledge base.
                   </p>
+                  {uploadResponse && (
+                    <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left">
+                      <p className="font-medium">Upload Details:</p>
+                      <p className="text-sm">Status: {uploadResponse.status}</p>
+                      <p className="text-sm">Location: {uploadResponse.gcs_path}</p>
+                      <p className="text-sm">Size: {uploadResponse.size}</p>
+                    </div>
+                  )}
                   <div className="flex justify-center space-x-4">
                     <Button onClick={resetForm} variant="outline">
                       Upload Another
@@ -194,6 +228,7 @@ const UploadDocument = () => {
                             variant="ghost"
                             size="icon"
                             onClick={handleRemoveFile}
+                            disabled={isUploading}
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -207,7 +242,7 @@ const UploadDocument = () => {
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div
-                                className="bg-blue-500 h-2 rounded-full"
+                                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
                                 style={{ width: `${uploadProgress}%` }}
                               ></div>
                             </div>
@@ -237,6 +272,7 @@ const UploadDocument = () => {
                         placeholder="Enter document title"
                         className="mt-1"
                         required
+                        disabled={isUploading}
                       />
                     </div>
 
@@ -247,7 +283,7 @@ const UploadDocument = () => {
                       <Select
                         value={category}
                         onValueChange={setCategory}
-                        required
+                        disabled={isUploading}
                       >
                         <SelectTrigger className="mt-1">
                           <SelectValue placeholder="Select a category" />
@@ -273,6 +309,7 @@ const UploadDocument = () => {
                         placeholder="Enter a brief description of the document"
                         className="mt-1"
                         rows={4}
+                        disabled={isUploading}
                       />
                     </div>
 
@@ -286,6 +323,7 @@ const UploadDocument = () => {
                         onChange={(e) => setTags(e.target.value)}
                         placeholder="Enter tags separated by commas"
                         className="mt-1"
+                        disabled={isUploading}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         Tags help make your document more discoverable
@@ -297,10 +335,17 @@ const UploadDocument = () => {
             </CardContent>
             {!uploadSuccess && (
               <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={() => window.history.back()}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate("/knowledge-base")}
+                  disabled={isUploading}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleSubmit} disabled={isUploading || !selectedFile}>
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={isUploading || !selectedFile || !title || !category}
+                >
                   {isUploading ? "Uploading..." : "Upload Document"}
                 </Button>
               </CardFooter>

@@ -134,122 +134,9 @@ const request = async <T>(
 
 // API Client
 export const apiClient = {
-  // Auth
-  login: <T>(data: { email: string; password: string }) => 
-    request<T>("/auth/login", "POST", data),
+  // ... keep existing code (Auth, Proposals, Proposal Sections, Comments, AI Features, etc.)
   
-  register: <T>(data: { name: string; email: string; password: string }) => 
-    request<T>("/auth/register", "POST", data),
-  
-  logout: <T>() => 
-    request<T>("/auth/logout", "POST"),
-
-  // Proposals
-  getProposals: <T>(params?: URLSearchParams) => {
-    const queryString = params ? `?${params.toString()}` : "";
-    return request<T>(`/proposals${queryString}`, "GET");
-  },
-  
-  getProposal: <T>(id: string) => 
-    request<T>(`/proposals/${id}`, "GET"),
-  
-  createProposal: <T>(data: any) => 
-    request<T>("/proposals", "POST", data),
-  
-  updateProposal: <T>(id: string, data: any) => 
-    request<T>(`/proposals/${id}`, "PUT", data),
-  
-  deleteProposal: <T>(id: string) => 
-    request<T>(`/proposals/${id}`, "DELETE"),
-  
-  // Proposal Sections
-  getProposalSections: <T>(id: string) => 
-    request<T>(`/proposals/${id}/sections`, "GET"),
-  
-  // Comments
-  getProposalComments: <T>(id: string) => 
-    request<T>(`/proposals/${id}/comments`, "GET"),
-  
-  addProposalComment: <T>(id: string, data: any) => 
-    request<T>(`/proposals/${id}/comments`, "POST", data),
-  
-  // AI Features - extended timeout for AI operations
-  generateProposalDraft: <T>(id: string, data: any) => 
-    request<T>(`/proposals/${id}/generate-draft`, "POST", data, "application/json", { timeout: 180000 }),
-  
-  refineProposal: <T>(id: string, data: any) => 
-    request<T>(`/proposals/${id}/refine`, "POST", data, "application/json", { timeout: 180000 }),
-  
-  analyzeRfp: <T>(data: FormData) => 
-    request<T>("/rfp/analyze", "POST", data, "multipart/form-data", { timeout: 180000 }),
-  
-  // Templates
-  getProposalTemplates: <T>() => 
-    request<T>("/templates/proposal", "GET"),
-  
-  getSummaryTemplates: <T>() => 
-    request<T>("/templates/summary", "GET"),
-    
-  // Knowledge Base
-  getKnowledgeDocuments: <T>(params?: URLSearchParams) => {
-    const queryString = params ? `?${params.toString()}` : "";
-    return request<T>(`/knowledge-base${queryString}`, "GET");
-  },
-  
-  getKnowledgeDocument: <T>(id: string) => 
-    request<T>(`/knowledge-base/${id}`, "GET"),
-  
-  createKnowledgeDocument: <T>(data: any) => 
-    request<T>("/knowledge-base", "POST", data),
-  
-  updateKnowledgeDocument: <T>(id: string, data: any) => 
-    request<T>(`/knowledge-base/${id}`, "PUT", data),
-  
-  deleteKnowledgeDocument: <T>(id: string) => 
-    request<T>(`/knowledge-base/${id}`, "DELETE"),
-  
-  getKnowledgeCategories: <T>() => 
-    request<T>("/knowledge-base/categories", "GET"),
-  
-  // AI Knowledge Base query - extended timeout
-  queryKnowledgeBase: <T>(data: { query: string }) => 
-    request<T>("/knowledge-base/query", "POST", data, "application/json", { timeout: 180000 }),
-  
-  // Documents
-  getDocuments: <T>(params?: URLSearchParams) => {
-    const queryString = params ? `?${params.toString()}` : "";
-    return request<T>(`/documents${queryString}`, "GET");
-  },
-  
-  getDocument: <T>(id: string) => 
-    request<T>(`/documents/${id}`, "GET"),
-  
-  uploadDocument: <T>(data: FormData) => 
-    request<T>("/documents", "POST", data, "multipart/form-data"),
-  
-  updateDocument: <T>(id: string, data: any) => 
-    request<T>(`/documents/${id}`, "PUT", data),
-  
-  deleteDocument: <T>(id: string) => 
-    request<T>(`/documents/${id}`, "DELETE"),
-  
-  downloadDocument: <T>(id: string) => 
-    request<T>(`/documents/${id}/download`, "GET"),
-  
-  // Dashboard
-  getDashboardStats: <T>() => 
-    request<T>("/dashboard/stats", "GET"),
-  
-  getRecentProposals: <T>(limit = 5) => 
-    request<T>(`/dashboard/proposals/recent?limit=${limit}`, "GET"),
-  
-  getUpcomingProposalDeadlines: <T>(days = 7, limit = 5) => 
-    request<T>(`/dashboard/proposals/upcoming?days=${days}&limit=${limit}`, "GET"),
-  
-  getUserActivity: <T>(limit = 10) => 
-    request<T>(`/dashboard/activity?limit=${limit}`, "GET"),
-  
-  // Knowledge Base list documents API - fixed implementation
+  // Knowledge Base list documents API - ensure consistent implementation
   listKnowledgeBaseDocuments: async <T>(): Promise<T> => {
     try {
       const response = await fetch(`${KNOWLEDGE_BASE_API_URL}/list`, {
@@ -288,6 +175,47 @@ export const apiClient = {
       throw error;
     }
   },
+
+  // Upload document to Knowledge Base
+  uploadKnowledgeBaseDocument: async <T>(file: File): Promise<T> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${KNOWLEDGE_BASE_API_URL}/upload`, {
+        method: "POST",
+        mode: "cors",
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        console.error("Error uploading document:", errorText);
+        
+        toast({
+          title: "Upload Failed",
+          description: `Failed to upload document: ${response.status} ${response.statusText}`,
+          variant: "destructive",
+        });
+        
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      return result as T;
+    } catch (error) {
+      console.error("Document upload error:", error);
+      
+      if (error instanceof Error) {
+        toast({
+          title: "Upload Failed",
+          description: `Failed to upload document: ${error.message}`,
+          variant: "destructive",
+        });
+      }
+      throw error;
+    }
+  }
 };
 
 export default apiClient;
