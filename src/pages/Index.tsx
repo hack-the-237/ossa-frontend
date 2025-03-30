@@ -3,6 +3,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { BookOpen, Upload, FileText, Clock, TrendingUp, Users, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import apiClient from "@/api/apiClient";
+
+// Knowledge Base Document interface
+interface KnowledgeBaseDocument {
+  name: string;
+  size: number;
+  content_type: string;
+  time_created: string;
+  updated: string;
+}
 
 const recentDocuments = [
   { id: 1, title: "Marketing Strategy 2023", category: "Marketing", date: "2 days ago" },
@@ -17,6 +28,17 @@ const recentProposals = [
 ];
 
 const Index = () => {
+  // Fetch knowledge base documents count
+  const { data: knowledgeBaseDocuments, isLoading: isLoadingDocuments } = useQuery({
+    queryKey: ['knowledgeBaseDocuments'],
+    queryFn: () => apiClient.listKnowledgeBaseDocuments<KnowledgeBaseDocument[]>(),
+    retry: 2,
+    refetchOnWindowFocus: false,
+  });
+
+  // Get document count
+  const documentCount = knowledgeBaseDocuments?.length || 0;
+  
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -29,8 +51,17 @@ const Index = () => {
             <CardDescription>Browse company documents</CardDescription>
           </CardHeader>
           <CardContent className="pt-0">
-            <p className="text-2xl font-bold">142</p>
-            <p className="text-sm text-muted-foreground">Total Documents</p>
+            {isLoadingDocuments ? (
+              <div className="animate-pulse">
+                <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                <div className="h-4 w-32 bg-gray-200 rounded mt-1"></div>
+              </div>
+            ) : (
+              <>
+                <p className="text-2xl font-bold">{documentCount}</p>
+                <p className="text-sm text-muted-foreground">Total Documents</p>
+              </>
+            )}
           </CardContent>
           <CardFooter>
             <Link to="/knowledge-base">
