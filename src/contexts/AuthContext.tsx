@@ -93,7 +93,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           description: "You have successfully logged in",
         });
         
-        navigate("/proposals");
+        // Changed redirect destination from /proposals to /create-proposal
+        navigate("/create-proposal");
       } else {
         throw new Error("Invalid email or password");
       }

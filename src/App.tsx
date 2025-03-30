@@ -46,17 +46,18 @@ const AppRoutes = () => {
         {/* Auth Routes */}
         <Route 
           path="/login" 
-          element={isAuthenticated ? <Navigate to="/proposals" replace /> : <Login />} 
+          element={isAuthenticated ? <Navigate to="/create-proposal" replace /> : <Login />} 
         />
         <Route 
           path="/signup" 
-          element={isAuthenticated ? <Navigate to="/proposals" replace /> : <SignUp />} 
+          element={isAuthenticated ? <Navigate to="/create-proposal" replace /> : <SignUp />} 
         />
         
         {/* Protected Routes */}
         <Route path="/" element={
           <ProtectedRoute>
             <Layout><Index /></Layout>
+            <Navigate to="/create-proposal" replace />
           </ProtectedRoute>
         } />
         <Route path="/knowledge-base" element={
