@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Search, Filter, FileText, BookOpen, Clock, Calendar, Send, MessageSquare, Bot, X } from "lucide-react";
+import { Search, Filter, FileText, BookOpen, Clock, Calendar, Send, MessageSquare, Bot, X, FileIcon, Download, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import apiClient from "@/api/apiClient";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,83 +16,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// Mock data
-const categories = [
-  "All Categories",
-  "Marketing",
-  "Sales",
-  "Product",
-  "Engineering",
-  "Finance",
-  "Legal",
-  "HR",
-];
-
-const documents = [
-  {
-    id: 1,
-    title: "Marketing Strategy 2023",
-    category: "Marketing",
-    description: "Comprehensive marketing strategy including target audience analysis and campaign planning.",
-    date: "May 12, 2023",
-    type: "PDF",
-    size: "2.4 MB",
-  },
-  {
-    id: 2,
-    title: "Product Roadmap Q3",
-    category: "Product",
-    description: "Detailed product roadmap for Q3 including feature development and release schedules.",
-    date: "Jun 03, 2023",
-    type: "DOC",
-    size: "1.8 MB",
-  },
-  {
-    id: 3,
-    title: "Technical Requirements Document",
-    category: "Engineering",
-    description: "Technical specifications and requirements for the new platform architecture.",
-    date: "Jul 18, 2023",
-    type: "PDF",
-    size: "3.2 MB",
-  },
-  {
-    id: 4,
-    title: "Sales Pitch Deck",
-    category: "Sales",
-    description: "Standard sales presentation for new enterprise clients with value propositions.",
-    date: "Aug 05, 2023",
-    type: "PPT",
-    size: "5.6 MB",
-  },
-  {
-    id: 5,
-    title: "Financial Report Q2",
-    category: "Finance",
-    description: "Quarterly financial report with revenue breakdown, expenses, and projections.",
-    date: "Aug 15, 2023",
-    type: "PDF",
-    size: "4.1 MB",
-  },
-  {
-    id: 6,
-    title: "Employee Handbook",
-    category: "HR",
-    description: "Company policies, procedures, and guidelines for all employees.",
-    date: "Sep 02, 2023",
-    type: "PDF",
-    size: "8.3 MB",
-  },
-];
-
-interface Document {
-  id: number;
-  title: string;
-  category: string;
-  description: string;
-  date: string;
-  type: string;
-  size: string;
+// Knowledge Base Document interface
+interface KnowledgeBaseDocument {
+  name: string;
+  size: number;
+  content_type: string;
+  time_created: string;
+  updated: string;
 }
 
 // Chat message interface
@@ -111,40 +42,69 @@ const KnowledgeBase = () => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Filter documents based on search term and category
-  const filteredDocuments = documents.filter((doc) => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          doc.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "All Categories" || doc.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+  // Fetch knowledge base documents
+  const { data: knowledgeBaseDocuments, isLoading: isLoadingDocuments, error } = useQuery({
+    queryKey: ['knowledgeBaseDocuments'],
+    queryFn: () => apiClient.listKnowledgeBaseDocuments<KnowledgeBaseDocument[]>(),
+    retry: 2,
+    refetchOnWindowFocus: false,
   });
 
-  // Sort documents
-  const sortedDocuments = [...filteredDocuments].sort((a, b) => {
-    if (sortBy === "newest") {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    } else if (sortBy === "oldest") {
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    } else if (sortBy === "a-z") {
-      return a.title.localeCompare(b.title);
+  console.log("Knowledge Base Documents:", knowledgeBaseDocuments);
+  console.log("Loading status:", isLoadingDocuments);
+  console.log("Error:", error);
+
+  // Format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    else if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+    else return (bytes / 1073741824).toFixed(1) + ' GB';
+  };
+
+  // Format date
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Get document icon based on content type
+  const getDocumentIcon = (contentType: string) => {
+    if (contentType.includes("pdf")) {
+      return <FileText className="h-10 w-10 text-red-500 p-2 bg-red-50 rounded-md" />;
+    } else if (contentType.includes("word") || contentType.includes("doc")) {
+      return <FileText className="h-10 w-10 text-blue-500 p-2 bg-blue-50 rounded-md" />;
+    } else if (contentType.includes("presentation") || contentType.includes("powerpoint")) {
+      return <FileText className="h-10 w-10 text-orange-500 p-2 bg-orange-50 rounded-md" />;
     } else {
-      return b.title.localeCompare(a.title);
-    }
-  });
-
-  const getDocumentIcon = (type: string) => {
-    switch (type) {
-      case "PDF":
-        return <FileText className="h-10 w-10 text-red-500 p-2 bg-red-50 rounded-md" />;
-      case "DOC":
-        return <FileText className="h-10 w-10 text-blue-500 p-2 bg-blue-50 rounded-md" />;
-      case "PPT":
-        return <FileText className="h-10 w-10 text-orange-500 p-2 bg-orange-50 rounded-md" />;
-      default:
-        return <FileText className="h-10 w-10 text-gray-500 p-2 bg-gray-50 rounded-md" />;
+      return <FileIcon className="h-10 w-10 text-gray-500 p-2 bg-gray-50 rounded-md" />;
     }
   };
 
+  // Filter documents based on search term
+  const filteredDocuments = knowledgeBaseDocuments
+    ? knowledgeBaseDocuments.filter((doc) => 
+        doc.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : [];
+
+  // Sort documents
+  const sortedDocuments = [...(filteredDocuments || [])].sort((a, b) => {
+    if (sortBy === "newest") {
+      return new Date(b.updated).getTime() - new Date(a.updated).getTime();
+    } else if (sortBy === "oldest") {
+      return new Date(a.updated).getTime() - new Date(b.updated).getTime();
+    } else if (sortBy === "a-z") {
+      return a.name.localeCompare(b.name);
+    } else {
+      return b.name.localeCompare(a.name);
+    }
+  });
+
+  // Handle chat message sending
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;
     
@@ -167,18 +127,15 @@ const KnowledgeBase = () => {
       
       const lowercaseInput = chatInput.toLowerCase();
       
-      if (lowercaseInput.includes("marketing") || lowercaseInput.includes("strategy")) {
-        aiResponse = "According to the Marketing Strategy 2023 document, our approach includes targeted audience analysis and comprehensive campaign planning across digital and traditional channels.";
-      } else if (lowercaseInput.includes("product") || lowercaseInput.includes("roadmap")) {
-        aiResponse = "The Product Roadmap for Q3 outlines feature development priorities and release schedules, with a focus on enhancing user experience and expanding platform capabilities.";
-      } else if (lowercaseInput.includes("technical") || lowercaseInput.includes("requirements")) {
-        aiResponse = "The Technical Requirements Document specifies architectural specifications for the new platform, including API integrations, scalability requirements, and security protocols.";
-      } else if (lowercaseInput.includes("sales") || lowercaseInput.includes("pitch")) {
-        aiResponse = "The Sales Pitch Deck contains our value propositions for enterprise clients, highlighting our unique solution benefits and competitive advantages.";
-      } else if (lowercaseInput.includes("financial") || lowercaseInput.includes("report")) {
-        aiResponse = "The Q2 Financial Report shows revenue breakdowns by product line and region, with projected growth rates for upcoming quarters.";
-      } else if (lowercaseInput.includes("employee") || lowercaseInput.includes("handbook")) {
-        aiResponse = "The Employee Handbook covers company policies including remote work guidelines, benefits information, and professional development opportunities.";
+      // Try to find relevant document based on query
+      const relevantDoc = knowledgeBaseDocuments?.find(doc => 
+        doc.name.toLowerCase().includes(lowercaseInput)
+      );
+      
+      if (relevantDoc) {
+        aiResponse = `I found a document that might be relevant: "${relevantDoc.name}". It was last updated on ${formatDate(relevantDoc.updated)}.`;
+      } else if (lowercaseInput.includes("mtn") || lowercaseInput.includes("proposal")) {
+        aiResponse = "I found some MTN-related documents in the knowledge base. Would you like me to provide more information about any specific document?";
       }
       
       const assistantMessage: ChatMessage = {
@@ -207,6 +164,16 @@ const KnowledgeBase = () => {
       ]);
     }
   };
+
+  // Categories derived from documents
+  const categories = [
+    "All Categories",
+    ...Array.from(new Set(knowledgeBaseDocuments?.map(doc => {
+      // Extract category from filename
+      const parts = doc.name.split('-');
+      return parts.length > 1 ? parts[0] : "Other";
+    }) || []))
+  ];
 
   return (
     <div className="container mx-auto px-4 py-8 pb-24">
@@ -303,58 +270,96 @@ const KnowledgeBase = () => {
         </TabsList>
         
         <TabsContent value="all" className="mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedDocuments.length > 0 ? (
-              sortedDocuments.map((doc) => (
-                <Card key={doc.id} className="overflow-hidden transition-all hover:shadow-md">
+          {isLoadingDocuments ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <Card key={n} className="overflow-hidden transition-all hover:shadow-md">
+                  <CardHeader className="pb-2 animate-pulse">
+                    <div className="flex justify-between items-start">
+                      <div className="h-10 w-10 bg-gray-200 rounded-md"></div>
+                      <div className="h-6 w-20 bg-gray-200 rounded"></div>
+                    </div>
+                    <div className="h-5 w-3/4 bg-gray-200 rounded mt-2"></div>
+                    <div className="h-4 w-1/2 bg-gray-200 rounded mt-2"></div>
+                  </CardHeader>
+                  <CardContent className="pb-2 animate-pulse">
+                    <div className="h-4 w-full bg-gray-200 rounded"></div>
+                  </CardContent>
+                  <CardFooter className="animate-pulse">
+                    <div className="h-9 w-full bg-gray-200 rounded"></div>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <div className="bg-red-100 p-6 rounded-full mb-4 inline-block">
+                <X className="h-8 w-8 text-red-500" />
+              </div>
+              <h3 className="text-lg font-medium mb-1">Error loading documents</h3>
+              <p className="text-muted-foreground mb-4">
+                There was a problem connecting to the knowledge base.
+              </p>
+              <Button onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </div>
+          ) : sortedDocuments.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sortedDocuments.map((doc) => (
+                <Card key={doc.name} className="overflow-hidden transition-all hover:shadow-md">
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
-                      {getDocumentIcon(doc.type)}
+                      {getDocumentIcon(doc.content_type)}
                       <div className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-800">
-                        {doc.type} • {doc.size}
+                        {doc.content_type.split('/').pop()?.toUpperCase()} • {formatFileSize(doc.size)}
                       </div>
                     </div>
-                    <CardTitle className="text-lg font-semibold mt-2">
-                      {doc.title}
+                    <CardTitle className="text-lg font-semibold mt-2 line-clamp-2">
+                      {doc.name}
                     </CardTitle>
                     <CardDescription>
-                      <span className="inline-block px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-800">
-                        {doc.category}
-                      </span>
-                      <span className="text-sm ml-2 text-muted-foreground flex items-center">
+                      <span className="text-sm text-muted-foreground flex items-center">
                         <Calendar className="h-3 w-3 inline mr-1" />
-                        {doc.date}
+                        Updated: {formatDate(doc.updated)}
                       </span>
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="pb-2">
-                    <p className="text-sm text-gray-600 line-clamp-2">{doc.description}</p>
+                    <p className="text-sm text-gray-600">
+                      Created: {formatDate(doc.time_created)}
+                    </p>
                   </CardContent>
-                  <CardFooter>
-                    <Link to={`/document/${doc.id}`} className="w-full">
-                      <Button variant="outline" className="w-full">View Document</Button>
-                    </Link>
+                  <CardFooter className="flex gap-2">
+                    <Button variant="outline" className="flex-1 flex items-center">
+                      <Eye className="h-4 w-4 mr-2" />
+                      View
+                    </Button>
+                    <Button variant="outline" className="flex-1 flex items-center">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
                   </CardFooter>
                 </Card>
-              ))
-            ) : (
-              <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                <div className="bg-gray-100 p-6 rounded-full mb-4">
-                  <Search className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium mb-1">No documents found</h3>
-                <p className="text-muted-foreground mb-4">
-                  Try adjusting your search or filter to find what you're looking for.
-                </p>
-                <Button onClick={() => {
-                  setSearchTerm("");
-                  setSelectedCategory("All Categories");
-                }}>
-                  Clear Filters
-                </Button>
+              ))}
+            </div>
+          ) : (
+            <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+              <div className="bg-gray-100 p-6 rounded-full mb-4">
+                <Search className="h-8 w-8 text-gray-400" />
               </div>
-            )}
-          </div>
+              <h3 className="text-lg font-medium mb-1">No documents found</h3>
+              <p className="text-muted-foreground mb-4">
+                Try adjusting your search or filter to find what you're looking for.
+              </p>
+              <Button onClick={() => {
+                setSearchTerm("");
+                setSelectedCategory("All Categories");
+              }}>
+                Clear Filters
+              </Button>
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="recent" className="mt-0">

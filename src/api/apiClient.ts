@@ -2,6 +2,7 @@ import { toast } from "@/hooks/use-toast";
 
 // Base URL for API requests
 const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.proposalmanagement.com/v1";
+const KNOWLEDGE_BASE_API_URL = "https://ossa-knw-466100360461.europe-west1.run.app";
 
 // Get the token from localStorage
 const getToken = () => localStorage.getItem("authToken");
@@ -247,6 +248,46 @@ export const apiClient = {
   
   getUserActivity: <T>(limit = 10) => 
     request<T>(`/dashboard/activity?limit=${limit}`, "GET"),
+  
+  // Knowledge Base list documents API - fixed implementation
+  listKnowledgeBaseDocuments: async <T>(): Promise<T> => {
+    try {
+      const response = await fetch(`${KNOWLEDGE_BASE_API_URL}/list`, {
+        method: "GET",
+        mode: "cors",
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unknown error");
+        console.error("Error fetching knowledge base documents:", errorText);
+        
+        toast({
+          title: "Error",
+          description: `Failed to fetch knowledge base documents: ${response.status} ${response.statusText}`,
+          variant: "destructive",
+        });
+        
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      return result as T;
+    } catch (error) {
+      console.error("Knowledge base API error:", error);
+      
+      if (error instanceof Error) {
+        toast({
+          title: "Error",
+          description: `Failed to fetch knowledge base documents: ${error.message}`,
+          variant: "destructive",
+        });
+      }
+      throw error;
+    }
+  },
 };
 
 export default apiClient;
