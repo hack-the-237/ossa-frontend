@@ -1,9 +1,16 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ReactMarkdown from 'react-markdown';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface FinalizeStepProps {
   finalProposal: string;
@@ -18,44 +25,6 @@ const FinalizeStep: React.FC<FinalizeStepProps> = ({
   finalizeProposal,
   documentLocation 
 }) => {
-  const handlePreview = () => {
-    // Create a preview window with proper markdown rendering
-    const previewWindow = window.open();
-    if (previewWindow) {
-      previewWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Proposal Preview</title>
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0 auto; padding: 2rem; max-width: 800px; }
-              h1 { font-size: 2rem; margin-bottom: 1.5rem; }
-              h2 { font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem; color: #1a56db; }
-              h3 { font-size: 1.25rem; margin-top: 1.5rem; margin-bottom: 0.75rem; }
-              p { margin-bottom: 1rem; }
-              ul, ol { margin-bottom: 1rem; padding-left: 1.5rem; }
-              li { margin-bottom: 0.5rem; }
-              pre { background-color: #f7f7f7; padding: 1rem; border-radius: 0.25rem; overflow-x: auto; }
-              blockquote { border-left: 4px solid #e5e7eb; padding-left: 1rem; margin-left: 0; color: #4b5563; }
-              table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
-              th, td { border: 1px solid #e5e7eb; padding: 0.5rem; text-align: left; }
-              th { background-color: #f3f4f6; }
-            </style>
-          </head>
-          <body>
-            <h1>Proposal Preview</h1>
-            <div id="content"></div>
-            <script src="https://unpkg.com/marked/marked.min.js"></script>
-            <script>
-              document.getElementById('content').innerHTML = marked.parse(${JSON.stringify(finalProposal)});
-            </script>
-          </body>
-        </html>
-      `);
-      previewWindow.document.close();
-    }
-  };
-
   const handleDownload = () => {
     const blob = new Blob([finalProposal], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     const url = URL.createObjectURL(blob);
@@ -77,15 +46,50 @@ const FinalizeStep: React.FC<FinalizeStepProps> = ({
         </p>
         
         <div className="flex justify-center space-x-4 mb-8">
-          <Button 
-            variant="outline" 
-            size="lg" 
-            onClick={handlePreview}
-            className="flex items-center"
-          >
-            <Eye className="mr-2 h-5 w-5" />
-            Preview Document
-          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="flex items-center"
+              >
+                <Eye className="mr-2 h-5 w-5" />
+                Preview Document
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="w-full max-w-3xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Proposal Preview</DialogTitle>
+                <DialogDescription>
+                  Preview your proposal before finalizing
+                </DialogDescription>
+              </DialogHeader>
+              <div className="mt-6 prose prose-sm max-w-none dark:prose-invert">
+                <ReactMarkdown 
+                  components={{
+                    h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mt-6 mb-4" {...props} />,
+                    h2: ({ node, ...props }) => <h2 className="text-xl font-bold mt-5 mb-3" {...props} />,
+                    h3: ({ node, ...props }) => <h3 className="text-lg font-bold mt-4 mb-2" {...props} />,
+                    h4: ({ node, ...props }) => <h4 className="text-base font-bold mt-3 mb-2" {...props} />,
+                    h5: ({ node, ...props }) => <h5 className="text-sm font-bold mt-3 mb-1" {...props} />,
+                    h6: ({ node, ...props }) => <h6 className="text-xs font-bold mt-3 mb-1" {...props} />,
+                    p: ({ node, ...props }) => <p className="my-3" {...props} />,
+                    ul: ({ node, ...props }) => <ul className="list-disc pl-6 my-3" {...props} />,
+                    ol: ({ node, ...props }) => <ol className="list-decimal pl-6 my-3" {...props} />,
+                    li: ({ node, ...props }) => <li className="my-1" {...props} />,
+                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic my-3" {...props} />,
+                    a: ({ node, ...props }) => <a className="text-blue-600 hover:underline" {...props} />,
+                    strong: ({ node, ...props }) => <strong className="font-bold" {...props} />,
+                    em: ({ node, ...props }) => <em className="italic" {...props} />,
+                    code: ({ node, ...props }) => <code className="bg-gray-100 dark:bg-gray-800 rounded px-1 py-0.5" {...props} />,
+                    pre: ({ node, ...props }) => <pre className="bg-gray-100 dark:bg-gray-800 rounded p-3 overflow-x-auto my-4" {...props} />
+                  }}
+                >
+                  {finalProposal}
+                </ReactMarkdown>
+              </div>
+            </DialogContent>
+          </Dialog>
           
           <Button 
             size="lg" 
