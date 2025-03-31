@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Document, Packer, Paragraph, HeadingLevel, TextRun } from "docx";
+import { jsPDF } from "jspdf";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface FinalizeStepProps {
   finalProposal: string;
@@ -25,16 +33,120 @@ const FinalizeStep: React.FC<FinalizeStepProps> = ({
   finalizeProposal,
   documentLocation 
 }) => {
-  const handleDownload = () => {
-    const blob = new Blob([finalProposal], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadText = () => {
+    const blob = new Blob([finalProposal], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'final_proposal.docx';
+    a.download = 'final_proposal.txt';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadWord = async () => {
+    setDownloading(true);
+    try {
+      // Create a new document
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: finalProposal.split('\n').map(line => {
+            // Simple heading detection (could be enhanced)
+            if (line.startsWith('# ')) {
+              return new Paragraph({
+                text: line.replace('# ', ''),
+                heading: HeadingLevel.HEADING_1
+              });
+            } else if (line.startsWith('## ')) {
+              return new Paragraph({
+                text: line.replace('## ', ''),
+                heading: HeadingLevel.HEADING_2
+              });
+            } else if (line.startsWith('### ')) {
+              return new Paragraph({
+                text: line.replace('### ', ''),
+                heading: HeadingLevel.HEADING_3
+              });
+            } else {
+              return new Paragraph({
+                children: [
+                  new TextRun(line)
+                ]
+              });
+            }
+          })
+        }]
+      });
+
+      // Generate the .docx file
+      const buffer = await Packer.toBuffer(doc);
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'final_proposal.docx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error creating Word document:", error);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    setDownloading(true);
+    try {
+      const doc = new jsPDF();
+      
+      // Split text into lines and add to PDF
+      const lines = finalProposal.split('\n');
+      let yPos = 10;
+      
+      lines.forEach(line => {
+        // Simple formatting for headings
+        if (line.startsWith('# ')) {
+          doc.setFontSize(24);
+          doc.text(line.replace('# ', ''), 10, yPos);
+          yPos += 10;
+        } else if (line.startsWith('## ')) {
+          doc.setFontSize(18);
+          doc.text(line.replace('## ', ''), 10, yPos);
+          yPos += 8;
+        } else if (line.startsWith('### ')) {
+          doc.setFontSize(16);
+          doc.text(line.replace('### ', ''), 10, yPos);
+          yPos += 7;
+        } else if (line.trim() !== '') {
+          doc.setFontSize(12);
+          
+          // Handle text wrapping
+          const textLines = doc.splitTextToSize(line, 180);
+          doc.text(textLines, 10, yPos);
+          yPos += textLines.length * 6;
+        } else {
+          yPos += 4; // Empty line
+        }
+        
+        // Add a new page if needed
+        if (yPos > 280) {
+          doc.addPage();
+          yPos = 10;
+        }
+      });
+      
+      doc.save('final_proposal.pdf');
+    } catch (error) {
+      console.error("Error creating PDF:", error);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -91,14 +203,29 @@ const FinalizeStep: React.FC<FinalizeStepProps> = ({
             </DialogContent>
           </Dialog>
           
-          <Button 
-            size="lg" 
-            onClick={handleDownload}
-            className="flex items-center"
-          >
-            <Download className="mr-2 h-5 w-5" />
-            Download as Word
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                size="lg" 
+                className="flex items-center"
+                disabled={downloading}
+              >
+                <Download className="mr-2 h-5 w-5" />
+                {downloading ? 'Downloading...' : 'Download'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleDownloadText}>
+                Download as Text (.txt)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownloadWord}>
+                Download as Word (.docx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDownloadPdf}>
+                Download as PDF (.pdf)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         
         <Button 
