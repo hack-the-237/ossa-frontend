@@ -15,12 +15,16 @@ const initialFormData = {
   
   // Step 2: RFP Summary
   summaryTemplate: "comprehensive",
-  rfpSummary: "",
-  keyRequirements: "",
-  evaluationCriteria: "",
+  rfpSummary: {},
+  keyRequirements: [],
+  evaluationCriteria: {},
   budget: "",
   timeline: "",
   projectTitle: "",
+  technicalRequirements: [],
+  deliverables: [],
+  clarifyingQuestions: [],
+  keywords: [],
   additionalContext: "",
   
   // Step 3: Proposal Draft (AI-generated)

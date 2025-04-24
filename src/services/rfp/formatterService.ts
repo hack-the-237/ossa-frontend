@@ -13,11 +13,18 @@ export const formatRfpSummary = (apiResponse: any): any => {
     const projectOverview = apiResponse["Project Overview"] || "No overview available";
     
     // Extract key requirements - handle both string and array formats
-    let keyRequirements = apiResponse["Key Requirements"] || [];
+   /* let keyRequirements = apiResponse["Key Requirements"] || [];
     // If key requirements is a string, try to split it into an array
     if (typeof keyRequirements === 'string') {
       keyRequirements = keyRequirements.split(/\n|•/).filter(item => item.trim().length > 0);
-    }
+    }*/
+    const requestor = apiResponse["Requestor"] || "Not specified";
+    const deadline = apiResponse["Deadline"] || "Not specified";
+    const scopeOfWork = apiResponse["Scope of Work"] || [];
+    const deliverables = apiResponse["Deliverables"] || [];
+    const technicalRequirements = apiResponse["Technical Requirements"] || [];
+    const clarifyingQuestions = apiResponse["Clarifying Questions"] || [];
+    const keywords = apiResponse["Keywords"] || [];
     
     // Extract contact information - could be string or object
     const contactInfo = apiResponse["Contact Information"] || "";
@@ -74,12 +81,19 @@ export const formatRfpSummary = (apiResponse: any): any => {
     const formattedData = {
       rfpSummary: {
         "Project Title": projectTitle,
-        "Project Overview": projectOverview
+        "Project Overview": projectOverview,
+        "Requestor": requestor,
+        "Deadline": deadline,
+        "Contact": apiResponse["Contact Information"] || ""
       },
-      keyRequirements: keyRequirements,
-      evaluationCriteria: contactInfoObj,
-      budget: budget, // Keep as string without JSON.stringify
-      timeline: timelineObj,
+      keyRequirements: scopeOfWork,
+      evaluationCriteria: { "Contact Information": contactInfo },
+      budget: budget,
+      timeline: { "Timeline": timeline },
+      technicalRequirements: technicalRequirements,
+      deliverables: deliverables,
+      clarifyingQuestions: clarifyingQuestions,
+      keywords: keywords
     };
     
     console.log("Formatted data for UI:", formattedData);
@@ -91,18 +105,30 @@ export const formatRfpSummary = (apiResponse: any): any => {
     return {
       rfpSummary: {
         "Project Title": apiResponse["Project Title"] || "N/A",
-        "Project Overview": apiResponse["Project Overview"] || "No overview available"
+        "Project Overview": apiResponse["Project Overview"] || "No overview available",
+        "Requestor": apiResponse["Requestor"] || "Not specified",
+        "Deadline": apiResponse["Deadline"] || "Not specified",
+        "Contact": apiResponse["Contact Information"] || "",
+        "Budget": apiResponse["Budget"] || "No budget information available",
       },
-      keyRequirements: Array.isArray(apiResponse["Key Requirements"]) 
-        ? apiResponse["Key Requirements"] 
-        : [apiResponse["Key Requirements"] || "No requirements available"],
-      evaluationCriteria: typeof apiResponse["Contact Information"] === 'object'
-        ? apiResponse["Contact Information"]
-        : {"Contact Information": apiResponse["Contact Information"] || "No contact information available"},
-      budget: apiResponse["Budget"] || "No budget information available",
-      timeline: typeof apiResponse["Timeline"] === 'object'
-        ? apiResponse["Timeline"]
-        : {"Timeline": apiResponse["Timeline"] || "No timeline information available"},
+      keyRequirements: Array.isArray(apiResponse["Scope of Work"]) 
+        ? apiResponse["Scope of Work"] 
+        : [apiResponse["Scope of Work"] || "No requirements available"],
+      evaluationCriteria: {"Contact Information": apiResponse["Contact Information"] || "No contact information available"},
+      
+      timeline: {"Timeline": apiResponse["Timeline"] || "No timeline information available"},
+      technicalRequirements: Array.isArray(apiResponse["Technical Requirements"]) 
+        ? apiResponse["Technical Requirements"] 
+        : [apiResponse["Technical Requirements"] || "No technical requirements available"],
+      deliverables: Array.isArray(apiResponse["Deliverables"]) 
+        ? apiResponse["Deliverables"] 
+        : [apiResponse["Deliverables"] || "No deliverables available"],
+      clarifyingQuestions: Array.isArray(apiResponse["Clarifying Questions"]) 
+        ? apiResponse["Clarifying Questions"] 
+        : [apiResponse["Clarifying Questions"] || "No clarifying questions available"],
+      keywords: Array.isArray(apiResponse["Keywords"]) 
+        ? apiResponse["Keywords"] 
+        : [apiResponse["Keywords"] || "No keywords available"]
     };
   }
 };

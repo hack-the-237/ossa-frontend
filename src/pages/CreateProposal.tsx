@@ -6,7 +6,8 @@ import { ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { useProposalForm } from "@/hooks/useProposalForm";
 import { StepIndicator } from "@/components/proposal/ProposalSteps";
 import UploadRfpStep from "@/components/proposal/UploadRfpStep";
-import RfpSummaryStep from "@/components/proposal/RfpSummaryStep";
+//import RfpSummaryStep from "@/components/proposal/RfpSummaryStep";
+import RfpSummaryStepv2 from "@/components/proposal/RfpSummaryStepv2";
 import ProposalDraftStep from "@/components/proposal/ProposalDraftStep";
 import RefineProposalStep from "@/components/proposal/RefineProposalStep";
 import FinalizeStep from "@/components/proposal/FinalizeStep";
@@ -58,7 +59,7 @@ const CreateProposal = () => {
         );
       case 1:
         return (
-          <RfpSummaryStep
+          <RfpSummaryStepv2
             formData={formData}
             handleChange={handleChange}
             handleSelectChange={handleSelectChange}
