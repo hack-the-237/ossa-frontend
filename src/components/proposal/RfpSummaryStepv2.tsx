@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import { 
   BookOpen, 
@@ -28,12 +27,18 @@ import {
 } from "@/components/ui/collapsible";
 import { toast } from "@/hooks/use-toast";
 import { Document, Packer, Paragraph, HeadingLevel } from "docx";
+import { jsPDF } from "jspdf";
+
+import { generateRfpSummaryPdf } from "@/utils/pdfGenerator";
+import type { RfpSummaryData } from "@/types/rfp";
 
 interface RfpSummaryStepv2Props {
   formData: any;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handleSelectChange: (name: string, value: string) => void;
   apiProcessing: boolean;
+  summaryData: RfpSummaryData;
+  documentName: string;
 }
 
 const RfpSummaryStepv2: React.FC<RfpSummaryStepv2Props> = ({
@@ -61,8 +66,8 @@ const RfpSummaryStepv2: React.FC<RfpSummaryStepv2Props> = ({
             new Paragraph({ text: `Deadline: ${formData?.rfpSummary?.["Deadline"] || "Not specified"}` }),
             new Paragraph({ text: `Project Overview: ${formData?.rfpSummary?.["Project Overview"] || ""}` }),
             new Paragraph({ text: "Scope of Work:" }),
-            ...(Array.isArray(formData?.rfpSummary?.["Scope of Work"]) 
-              ? formData.rfpSummary["Scope of Work"].map((item: string) => 
+            ...(Array.isArray(formData?.keyRequirements) 
+              ? formData.keyRequirements.map((item: string) => 
                   new Paragraph({ text: `• ${item}` })
                 )
               : [new Paragraph({ text: "No scope of work specified" })]),
@@ -90,6 +95,33 @@ const RfpSummaryStepv2: React.FC<RfpSummaryStepv2Props> = ({
       toast({
         title: "Download Failed",
         description: "Failed to generate Word document. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const handleDownloadPdf = () => {
+    try {
+      const doc = generateRfpSummaryPdf(formData);
+      // Get requestor name and format it for filename (remove spaces, special chars)
+      const requestor = formData?.rfpSummary?.["Requestor"] || "unnamed";
+      const safeRequestorName = requestor
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '_') // Replace any non-alphanumeric chars with underscore
+        .replace(/_+/g, '_') // Replace multiple underscores with single
+        .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+      
+      doc.save(`${safeRequestorName}_summary.pdf`);
+      
+      toast({
+        title: "Download Complete",
+        description: "RFP Summary has been downloaded as a PDF.",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to generate PDF document. Please try again.",
         variant: "destructive",
       });
     }
@@ -152,6 +184,10 @@ const RfpSummaryStepv2: React.FC<RfpSummaryStepv2Props> = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="bg-background">
+          <DropdownMenuItem onClick={handleDownloadPdf}>
+              <FileText className="mr-2 h-4 w-4" />
+              Download as PDF
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleDownloadWord}>
               <FileText className="mr-2 h-4 w-4" />
               Download as Word
@@ -164,7 +200,7 @@ const RfpSummaryStepv2: React.FC<RfpSummaryStepv2Props> = ({
       <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
                 <span className="text-sm">Keywords:</span>
-                {formData.keywords.map((keyword, index) => (
+                {formData.keywords && formData.keywords.map((keyword, index) => (
                   <span
                     key={index}
                     className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground"
@@ -228,11 +264,11 @@ const RfpSummaryStepv2: React.FC<RfpSummaryStepv2Props> = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4" />
-                <span className="text-sm">Timeline: {formData?.rfpSummary?.["Timeline"] || "Not specified"}</span>
+                <span className="text-sm">Timeline: {formData?.timeline?.["Timeline"] || "Not specified"}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-4 w-4" />
-                <span className="text-sm">Budget: {formData?.rfpSummary?.["Budget"] || "Not specified"}</span>
+                <span className="text-sm">Budget: {formData?.budget || "Not specified"}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4" />
