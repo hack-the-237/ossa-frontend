@@ -26,10 +26,11 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { toast } from "@/hooks/use-toast";
-import { Document, Packer, Paragraph, HeadingLevel } from "docx";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } from "docx";
 import { jsPDF } from "jspdf";
 
 import { generateRfpSummaryPdf } from "@/utils/pdfGenerator";
+import { generateRfpSummaryDoc } from "@/utils/docGenerator";
 import type { RfpSummaryData } from "@/types/rfp";
 
 interface RfpSummaryStepv2Props {
@@ -55,32 +56,32 @@ const RfpSummaryStepv2: React.FC<RfpSummaryStepv2Props> = ({
 
   const handleDownloadWord = async () => {
     try {
-      const doc = new Document({
-        sections: [{
-          properties: {},
-          children: [
-            new Paragraph({
-              text: formData?.rfpSummary?.["Project Title"] || "RFP Summary",
-              heading: HeadingLevel.HEADING_1
-            }),
-            new Paragraph({ text: `Deadline: ${formData?.rfpSummary?.["Deadline"] || "Not specified"}` }),
-            new Paragraph({ text: `Project Overview: ${formData?.rfpSummary?.["Project Overview"] || ""}` }),
-            new Paragraph({ text: "Scope of Work:" }),
-            ...(Array.isArray(formData?.keyRequirements) 
-              ? formData.keyRequirements.map((item: string) => 
-                  new Paragraph({ text: `• ${item}` })
-                )
-              : [new Paragraph({ text: "No scope of work specified" })]),
-          ]
-        }]
-      });
+      console.log("Starting Word document generation with formData:", formData);
+      
+      if (!formData) {
+        throw new Error("Form data is undefined or null");
+      }
 
-      const buffer = await Packer.toBuffer(doc);
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const blob = await generateRfpSummaryDoc(formData);
+      
+      if (!blob) {
+        throw new Error("Generated document blob is empty");
+      }
+
+      console.log("Document blob generated successfully");
+      
+      // Get requestor name and format it for filename
+      const requestor = formData?.rfpSummary?.["Requestor"] || "unnamed";
+      const safeRequestorName = requestor
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_|_$/g, '');
+      
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'rfp_summary.docx';
+      a.download = `${safeRequestorName}_summary.docx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -92,9 +93,15 @@ const RfpSummaryStepv2: React.FC<RfpSummaryStepv2Props> = ({
       });
     } catch (error) {
       console.error('Error generating Word document:', error);
+      console.error('Error details:', {
+        formData: formData,
+        errorMessage: error.message,
+        errorStack: error.stack
+      });
+      
       toast({
         title: "Download Failed",
-        description: "Failed to generate Word document. Please try again.",
+        description: error.message || "Failed to generate Word document. Please try again.",
         variant: "destructive",
       });
     }
