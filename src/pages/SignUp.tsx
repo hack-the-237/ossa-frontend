@@ -62,17 +62,17 @@ const SignUp = () => {
     {
       title: "Get Started Today",
       description: "Join Proposal Cloud and start creating professional proposals in minutes.",
-      image: "/public/OSSA.png"
+      image: "/OSSA.png"
     },
     {
       title: "Advanced Analytics",
       description: "Track proposal performance and gain insights to improve your win rate.",
-      image: "/public/placeholder.svg"
+      image: "/OSSA.svg"
     },
     {
       title: "Expert Templates",
       description: "Access a library of professionally designed templates for any industry.",
-      image: "/public/placeholder.png"
+      image: "/OSSA_icon.png"
     }
   ];
 
@@ -82,7 +82,7 @@ const SignUp = () => {
         {/* Left panel */}
         <div className="w-1/2 bg-white p-12 flex flex-col">
           <div className="mb-8">
-            <img src="/public/OSSA.png" alt="Logo" className="h-8" />
+            <img src="/OSSA_icon.png" alt="Logo" className="h-8" />
           </div>
 
           <div className="flex-grow flex flex-col justify-center">

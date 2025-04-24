@@ -53,17 +53,17 @@ const Login = () => {
     {
       title: "Smart Proposal Builder",
       description: "Create professional proposals in minutes with our AI-powered tools and templates.",
-      image: "/public/OSSA.png"
+      image: "/OSSA.png"
     },
     {
       title: "RFP Analysis",
       description: "Automatically analyze RFPs to identify key requirements and win strategies.",
-      image: "/public/OSSA.png"
+      image: "/OSSA.png"
     },
     {
       title: "Collaborative Editing",
       description: "Work together with your team in real-time to create winning proposals.",
-      image: "/public/OSSA.png"
+      image: "/OSSA.png"
     }
   ];
 
@@ -73,7 +73,7 @@ const Login = () => {
         {/* Left panel */}
         <div className="w-1/2 bg-white p-12 flex flex-col">
           <div className="mb-10">
-            <img src="/public/OSSA.png" alt="Logo" className="h-8" />
+            <img src="/OSSA_icon.png" alt="Logo" className="h-8" />
           </div>
 
           <div className="flex-grow flex flex-col justify-center">
